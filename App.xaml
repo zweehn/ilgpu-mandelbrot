@@ -1,7 +1,7 @@
-﻿<Application x:Class="ilgpu.App"
+﻿<Application x:Class="ilgputest.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ilgpu"
+             xmlns:local="clr-namespace:ilgputest"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          
