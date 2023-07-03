@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        Title="MainWindow" Height="1024" Width="1024"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Grid>
         <Grid.RowDefinitions>
@@ -15,6 +15,12 @@
         </Grid.ColumnDefinitions>
         
         <Image Source="{Binding Image}" Stretch="UniformToFill"/>
-        <TextBlock Text="{Binding Rendertime,StringFormat=Rendertime: {0}ms}" Foreground="Red"/>
+        <StackPanel Orientation="Vertical">
+            <TextBlock Text="{Binding Rendertime,StringFormat=Rendertime: {0}ms}" Foreground="Red"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Limit: "/>
+                <TextBox Text="{Binding Limit,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Window>

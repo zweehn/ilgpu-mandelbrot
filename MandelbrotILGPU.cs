@@ -20,7 +20,7 @@ namespace ilgputest
 
         Context context;
         Accelerator accelerator;
-        private Action<Index1D, ComplexDouble, int, int, double, ArrayView<int>, int, ArrayView<uint>> _GenerateImage;
+        private Action<Index1D, ComplexDouble, int, int, double, ArrayView<uint>, int, ArrayView<uint>> _GenerateImage;
 
         public MandelbrotILGPU()
         {
@@ -33,32 +33,29 @@ namespace ilgputest
 
             // load / precompile the kernel
             _GenerateImage =
-                accelerator.LoadAutoGroupedStreamKernel<Index1D, ComplexDouble, int, int, double, ArrayView<int>, int, ArrayView<uint>>(Kernel);
-
+                accelerator.LoadAutoGroupedStreamKernel<Index1D, ComplexDouble, int, int, double, ArrayView<uint>, int, ArrayView<uint>>(Kernel);
         }
 
 
-
-        public ImageSource GenerateImage(int width, int height, ComplexDouble centerPoint, double step, int[] palette, int limit)
+        public ImageSource GenerateImage(int width, int height, ComplexDouble centerPoint, double step, uint[] palette, int limit)
         {
             PixelFormat pf = PixelFormats.Bgr32;
-
 
             var rawImage = new uint[width * height];
             using var dev_out = accelerator.Allocate1D<uint>(rawImage.Length);
 
-            using var palette_buf = accelerator.Allocate1D<int>(palette.Length);
+            using var palette_buf = accelerator.Allocate1D<uint>(palette.Length);
             palette_buf.CopyFromCPU(palette);
 
             _GenerateImage(width * height, centerPoint, width, height, step, palette_buf.View, limit, dev_out.View);
-
             accelerator.Synchronize();
 
             dev_out.CopyToCPU(rawImage);
+
             return BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgr32, null, rawImage, width * pf.BitsPerPixel / 8);
         }
 
-        static void Kernel(Index1D position, ComplexDouble centerPoint,int height,int width, double step, ArrayView<int> palette, int limit, ArrayView<uint> output)
+        static void Kernel(Index1D position, ComplexDouble centerPoint, int height, int width, double step, ArrayView<uint> palette, int limit, ArrayView<uint> output)
         {
             int x = position % width;
             int y = position / width;
@@ -67,8 +64,7 @@ namespace ilgputest
 
             var pixelValue = IteratePixel(new ComplexDouble(x * step, y * step) + start, limit);
 
-            output[x + y * width] = ValueToColor(pixelValue, limit, palette);
-
+            output[x + (y * width)] = ValueToColor(pixelValue, limit, palette);
         }
 
         private static int IteratePixel(ComplexDouble c, int limit)
@@ -83,13 +79,34 @@ namespace ilgputest
             return limit;
         }
 
-        private static uint ValueToColor(int value, int limit, ArrayView<int> palette)
+        private static uint ValueToColor(int value, int limit, ArrayView<uint> palette)
         {
-            uint color = 0x00;
-            color |= (uint)((double)value / limit * 255);
-            //color |= (uint)((double)value / limit * 255) << 8;
-            color |= (uint)((double)value / limit * 255) << 16;
-            return color;
+            var fraction = (double)value / limit;
+            if(value == limit)
+            {
+                return 0x00000000;
+            }
+            else
+            {
+                var multipliedFraction = fraction * (palette.Length-1);
+                var startsegment = (int)multipliedFraction;
+                var innerFraction = multipliedFraction - startsegment;
+                return InterpolateTwoColors(palette[startsegment], palette[startsegment+1], innerFraction);
+            }
+        }
+
+        private static uint InterpolateTwoColors(uint color1, uint color2, double fraction)
+        {
+            byte r1 = (byte)((color1 >> 16) & 0xff);
+            byte r2 = (byte)((color2 >> 16) & 0xff);
+            byte g1 = (byte)((color1 >> 8) & 0xff);
+            byte g2 = (byte)((color2 >> 8) & 0xff);
+            byte b1 = (byte)(color1 & 0xff);
+            byte b2 = (byte)(color2 & 0xff);
+
+            return (uint)((r2 - r1) * fraction + r1) << 16 |
+                    (uint)((g2 - g1) * fraction + g1) << 8 |
+                    (uint)((b2 - b1) * fraction + b1);
         }
 
         protected virtual void Dispose(bool disposing)

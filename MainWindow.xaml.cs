@@ -24,14 +24,14 @@ namespace ilgputest
     [INotifyPropertyChanged]
     public partial class MainWindow : Window
     {
-        [ObservableProperty]
-        ImageSource image;
+        public ImageSource Image => getImage();
 
         [ObservableProperty]
-        double step = 0.005;
+        double step = 0.05;
 
         [ObservableProperty]
-        int limit = 15;
+        [NotifyPropertyChangedFor(nameof(Image))]
+        int limit = 150;
 
         [ObservableProperty]
         string rendertime = "";
@@ -43,22 +43,17 @@ namespace ilgputest
 
         private bool isProcessing = false;
 
+        private uint[] palette = new uint[] { 0x000000ff, 0x0000ff00, 0x00ffff00, 0x00ffffff };
+
         public MainWindow()
         {
             DataContext = this;
             InitializeComponent();
-            Image = mandelbrot.GenerateImage((int)Width, (int)Height, CenterPoint, Step, new int[] { 0x00000000, 0x00ffffff }, Limit);
             MouseWheel += MainWindow_MouseWheel;
         }
 
         private void MainWindow_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (isProcessing)
-                return;
-
-            isProcessing = true;
-            var stopwatch = Stopwatch.StartNew();
-
             if (e.Delta > 0)
             {
                 Step = Step * 0.9;
@@ -68,18 +63,34 @@ namespace ilgputest
                 Step = Step * 1.1;
             }
 
+
             var mousePosition = e.GetPosition(this);
             var x = mousePosition.X - Width / 2;
             var y = mousePosition.Y - Height / 2;
 
             CenterPoint = CenterPoint + new ComplexDouble(x * Step / 2, y * Step / 2);
-
-            Image = mandelbrot.GenerateImage((int)Width, (int)Height, CenterPoint, Step, new int[] { 0x00000000, 0x00ffffff }, Limit);
+            
             OnPropertyChanged(nameof(Image));
+        }
+
+        private ImageSource getImage()
+        {
+            if (isProcessing)
+                return (ImageSource)Binding.DoNothing;
+
+            isProcessing = true;
+            var stopwatch = Stopwatch.StartNew();
+
+            
+
+            var Image = mandelbrot.GenerateImage((int)Width, (int)Height, CenterPoint, Step, palette, Limit);
+            //OnPropertyChanged(nameof(Image));
             stopwatch.Stop();
 
             Rendertime = stopwatch.Elapsed.ToString("fff");
             isProcessing = false;
+
+            return Image;
         }
     }
 

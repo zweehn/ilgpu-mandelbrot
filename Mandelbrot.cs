@@ -11,7 +11,7 @@ namespace ilgputest
     public class Mandelbrot: IImageGenerator
     {
 
-        public ImageSource GenerateImage(int width, int height, ComplexDouble centerPoint, double step, int[] palette, int limit)
+        public ImageSource GenerateImage(int width, int height, ComplexDouble centerPoint, double step, uint[] palette, int limit)
         {
             PixelFormat pf = PixelFormats.Bgr32;
             ComplexDouble start = centerPoint + new ComplexDouble(-width * step / 2, -height * step / 2);
@@ -43,7 +43,7 @@ namespace ilgputest
             return limit;
         }
 
-        private uint ValueToColor(int value, int limit, int[] palette)
+        private uint ValueToColor(int value, int limit, uint[] palette)
         {
             uint color = 0x00;
             color |= (uint)((double)value / limit * 255);
