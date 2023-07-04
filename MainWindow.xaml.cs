@@ -27,7 +27,7 @@ namespace ilgputest
         public ImageSource Image => getImage();
 
         [ObservableProperty]
-        double step = 0.05;
+        double step = 0.005;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Image))]
@@ -98,6 +98,9 @@ namespace ilgputest
             {
                 Step = Step * 1.2;
             }
+
+            // Increase Limit while zooming
+            Limit = (int)(-Math.Log2(Step)*10);
 
             var stepchange = Step - oldStep;
 
