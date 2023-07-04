@@ -42,6 +42,7 @@ namespace ilgputest
         IImageGenerator mandelbrot = new MandelbrotILGPU();
 
         private bool isProcessing = false;
+        private Point? initmousepoint = null;
 
         private uint[] palette = new uint[] { 0x000000ff, 0x0000ff00, 0x00ffff00, 0x00ffffff };
 
@@ -50,25 +51,61 @@ namespace ilgputest
             DataContext = this;
             InitializeComponent();
             MouseWheel += MainWindow_MouseWheel;
+            SizeChanged += MainWindow_SizeChanged;
+            MouseDown += MainWindow_MouseDown;
+            MouseUp += MainWindow_MouseUp;
+            MouseMove += MainWindow_MouseMove;
+        }
+
+        private void MainWindow_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!initmousepoint.HasValue)
+                return;
+
+            var currmousepoint = e.GetPosition(this);
+            Vector delta = (Vector)(currmousepoint - initmousepoint!);
+            initmousepoint = currmousepoint;
+
+            delta = delta * Step;
+
+            CenterPoint = new ComplexDouble(CenterPoint.r - delta.X, CenterPoint.i - delta.Y);
+            OnPropertyChanged(nameof(Image));
+        }
+
+        private void MainWindow_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            initmousepoint = null;
+        }
+
+        private void MainWindow_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            initmousepoint = e.GetPosition(this);
+        }
+
+        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(Image));
         }
 
         private void MainWindow_MouseWheel(object sender, MouseWheelEventArgs e)
         {
+            var oldStep = Step;
             if (e.Delta > 0)
             {
-                Step = Step * 0.9;
+                Step = Step * 0.8;
             }
             else
             {
-                Step = Step * 1.1;
+                Step = Step * 1.2;
             }
 
+            var stepchange = Step - oldStep;
 
             var mousePosition = e.GetPosition(this);
-            var x = mousePosition.X - Width / 2;
-            var y = mousePosition.Y - Height / 2;
+            var x = -((mousePosition.X - Width/2) * stepchange);
+            var y = -((mousePosition.Y - Height/2) * stepchange);
 
-            CenterPoint = CenterPoint + new ComplexDouble(x * Step / 2, y * Step / 2);
+            CenterPoint = CenterPoint + new ComplexDouble(x, y);
             
             OnPropertyChanged(nameof(Image));
         }

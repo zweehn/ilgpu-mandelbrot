@@ -55,7 +55,7 @@ namespace ilgputest
             return BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgr32, null, rawImage, width * pf.BitsPerPixel / 8);
         }
 
-        static void Kernel(Index1D position, ComplexDouble centerPoint, int height, int width, double step, ArrayView<uint> palette, int limit, ArrayView<uint> output)
+        static void Kernel(Index1D position, ComplexDouble centerPoint, int width, int height, double step, ArrayView<uint> palette, int limit, ArrayView<uint> output)
         {
             int x = position % width;
             int y = position / width;
